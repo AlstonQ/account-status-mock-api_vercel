@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Any, Dict, Optional
 
 app = FastAPI()
 
@@ -14,6 +14,70 @@ class AccountStatusRequest(BaseModel):
     input3: Optional[str] = ""
     input4: Optional[str] = ""
     input5: Optional[str] = ""
+
+class NomineeUpdateRequest(BaseModel):
+    reqType: str = Field(..., title="ADD / ENQUIRY")
+    foracid: Optional[str] = ""
+    requestId: str = Field(..., title="Unique request id")
+    serviceReqId: Optional[str] = ""
+    EKYCrrn: Optional[str] = ""
+    nomineeName: Optional[str] = ""
+    nomineeRegno: Optional[str] = ""
+    nomineeRelType: Optional[str] = ""
+    nomineeMinorFlag: Optional[str] = ""
+    nomineeDob: Optional[str] = ""
+    nomineeAddrLine1: Optional[str] = ""
+    nomineeAddrLine2: Optional[str] = ""
+    nomineeAddrLine3: Optional[str] = ""
+    nomineeCity: Optional[str] = ""
+    nomineeState: Optional[str] = ""
+    nomineeCountry: Optional[str] = ""
+    nomineePostalCode: Optional[str] = ""
+    guardianCode: Optional[str] = ""
+    guardianName: Optional[str] = ""
+    channel: str = Field(..., title="Channel")
+    reserveFreetext1: Optional[str] = ""
+    reserveFreetext2: Optional[str] = ""
+    reserveFreetext3: Optional[str] = ""
+    reserveFreetext4: Optional[str] = ""
+    reserveFreetext5: Optional[str] = ""
+    reserveFreetext6: Optional[str] = ""
+    reserveFreetext7: Optional[str] = ""
+    reserveFreetext8: Optional[str] = ""
+    reserveFreetext9: Optional[str] = ""
+    reserveFreetext10: Optional[str] = ""
+
+class ProfileUpdateRequest(BaseModel):
+    requestId: str = Field(..., title="Unique request id")
+    channelId: Optional[str] = ""
+    customerId: Optional[str] = ""
+    reqType: str = Field(..., title="ADD / ENQUIRY")
+    EKYCrrn: Optional[str] = ""
+    DOB: Optional[str] = ""
+    addrCategory: Optional[str] = ""
+    addrLine1: Optional[str] = ""
+    addrLine2: Optional[str] = ""
+    cityCode: Optional[str] = ""
+    stateCode: Optional[str] = ""
+    countryCode: Optional[str] = ""
+    pinCode: Optional[str] = ""
+    qualification: Optional[str] = ""
+    incomeRangeFrom: Optional[str] = ""
+    incomeRangeTo: Optional[str] = ""
+    community: Optional[str] = ""
+    caste: Optional[str] = ""
+    occupation: Optional[str] = ""
+    panNumber: Optional[str] = ""
+    reserveFreetext1: Optional[str] = ""
+    reserveFreetext2: Optional[str] = ""
+    reserveFreetext3: Optional[str] = ""
+    reserveFreetext4: Optional[str] = ""
+    reserveFreetext5: Optional[str] = ""
+    reserveFreetext6: Optional[str] = ""
+    reserveFreetext7: Optional[str] = ""
+    reserveFreetext8: Optional[str] = ""
+    reserveFreetext9: Optional[str] = ""
+    reserveFreetext10: Optional[str] = ""
 
 SUCCESS_RESPONSE = {
     "account_number": "10010100463337",
@@ -133,6 +197,62 @@ FAILURE_RESPONSE = {
     "freetext20": ""
 }
 
+NOMINEE_SUCCESS_RESPONSE = {
+    "requestId": "",
+    "status": "S000",
+    "message": "Record inserted for Nominee updation",
+    "cbsResponse": "",
+    "cbsStatus": ""
+}
+
+NOMINEE_ENQUIRY_RESPONSE = {
+    "requestId": "",
+    "status": "S000",
+    "message": "SUCCESS",
+    "cbsResponse": "",
+    "cbsStatus": ""
+}
+
+NOMINEE_FAILURE_RESPONSE = {
+    "requestId": "",
+    "status": "F001",
+    "message": "Some error occured, please check the parameters",
+    "cbsResponse": "",
+    "cbsStatus": ""
+}
+
+PROFILE_SUCCESS_RESPONSE = {
+    "requestId": "",
+    "status": "S000",
+    "message": "Record inserted for Profile updation",
+    "CustomerID": "",
+    "cbsStatus": "",
+    "cbsResponse": ""
+}
+
+PROFILE_ENQUIRY_RESPONSE = {
+    "requestId": "",
+    "status": "S000",
+    "message": "SUCCESS",
+    "CustomerID": "",
+    "cbsStatus": "SUCCESS",
+    "cbsResponse": "Retail Customer successfully updated with CIFID 22385796"
+}
+
+PROFILE_FAILURE_RESPONSE = {
+    "requestId": "",
+    "status": "F000",
+    "message": "Unknown error occurred, please check the parameters",
+    "CustomerID": "",
+    "cbsStatus": "",
+    "cbsResponse": ""
+}
+
+def with_request_id(response: Dict[str, Any], request_id: str) -> Dict[str, Any]:
+    payload = response.copy()
+    payload["requestId"] = request_id
+    return payload
+
 @app.post("/restgateway/services/AccountStatusEnquiry/acctStatusEnq")
 def account_status_enquiry(request: AccountStatusRequest):
     # Based on user feedback: Mock Logic returns success for exact matching parameters (e.g. mobile matches success request)
@@ -140,3 +260,29 @@ def account_status_enquiry(request: AccountStatusRequest):
         return SUCCESS_RESPONSE
     else:
         return FAILURE_RESPONSE
+
+@app.post("/restgateway/services/account/nomineeUpdate")
+def nominee_update(request: NomineeUpdateRequest):
+    if not request.requestId:
+        return with_request_id(NOMINEE_FAILURE_RESPONSE, request.requestId)
+
+    if request.reqType.upper() == "ENQUIRY":
+        return with_request_id(NOMINEE_ENQUIRY_RESPONSE, request.requestId)
+
+    if request.reqType.upper() != "ADD" or not request.foracid or not request.channel:
+        return with_request_id(NOMINEE_FAILURE_RESPONSE, request.requestId)
+
+    return with_request_id(NOMINEE_SUCCESS_RESPONSE, request.requestId)
+
+@app.post("/restgateway/services/profileUpdateService")
+def profile_update(request: ProfileUpdateRequest):
+    if not request.requestId:
+        return with_request_id(PROFILE_FAILURE_RESPONSE, request.requestId)
+
+    if request.reqType.upper() == "ENQUIRY":
+        return with_request_id(PROFILE_ENQUIRY_RESPONSE, request.requestId)
+
+    if request.reqType.upper() != "ADD" or not request.channelId or not request.customerId:
+        return with_request_id(PROFILE_FAILURE_RESPONSE, request.requestId)
+
+    return with_request_id(PROFILE_SUCCESS_RESPONSE, request.requestId)
